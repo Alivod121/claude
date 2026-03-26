@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>加油站管理系统</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, "Microsoft YaHei", sans-serif;
+        background: #f0f2f5;
+        color: #333;
+      }
+      header {
+        background: linear-gradient(135deg, #1a73e8, #0d47a1);
+        color: #fff;
+        padding: 20px 32px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      header h1 {
+        font-size: 24px;
+      }
+      #clock {
+        font-size: 16px;
+        opacity: 0.9;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 24px auto;
+        padding: 0 16px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: 20px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        padding: 20px;
+      }
+      .card h2 {
+        font-size: 18px;
+        margin-bottom: 16px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e8e8e8;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .card h2 .icon {
+        font-size: 22px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 14px;
+      }
+      th {
+        background: #fafafa;
+        font-weight: 600;
+        color: #666;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+      .badge-green {
+        background: #e6f7ee;
+        color: #1a9e4a;
+      }
+      .badge-red {
+        background: #fde8e8;
+        color: #d32f2f;
+      }
+      .badge-yellow {
+        background: #fff8e1;
+        color: #f57f17;
+      }
+      .badge-blue {
+        background: #e3f2fd;
+        color: #1565c0;
+      }
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #e8e8e8;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.5s ease;
+      }
+      .stat-row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .stat-box {
+        flex: 1;
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 16px;
+        text-align: center;
+      }
+      .stat-box .value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1a73e8;
+      }
+      .stat-box .label {
+        font-size: 13px;
+        color: #888;
+        margin-top: 4px;
+      }
+      .form-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+      .form-row select,
+      .form-row input {
+        padding: 8px 12px;
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        font-size: 14px;
+        flex: 1;
+        min-width: 80px;
+      }
+      .btn {
+        padding: 8px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: opacity 0.2s;
+      }
+      .btn:hover {
+        opacity: 0.85;
+      }
+      .btn-primary {
+        background: #1a73e8;
+        color: #fff;
+      }
+      .btn-success {
+        background: #1a9e4a;
+        color: #fff;
+      }
+      .btn-danger {
+        background: #d32f2f;
+        color: #fff;
+      }
+      .alert-list {
+        margin-top: 12px;
+      }
+      .alert-item {
+        padding: 10px 14px;
+        background: #fff3e0;
+        border-left: 4px solid #ff9800;
+        border-radius: 0 6px 6px 0;
+        margin-bottom: 8px;
+        font-size: 14px;
+      }
+      .txn-list {
+        max-height: 220px;
+        overflow-y: auto;
+      }
+      .empty {
+        text-align: center;
+        color: #bbb;
+        padding: 20px;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>⛽ 加油站管理系统</h1>
+      <div id="clock"></div>
+    </header>
+
+    <div class="container">
+      <!-- 统计概览 -->
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="value" id="stat-revenue">¥0</div>
+          <div class="label">总营收</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" id="stat-liters">0</div>
+          <div class="label">总销售量（升）</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" id="stat-txns">0</div>
+          <div class="label">交易次数</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" id="stat-employees">0</div>
+          <div class="label">在班员工</div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <!-- 燃油库存 -->
+        <div class="card">
+          <h2><span class="icon">🛢️</span> 燃油库存</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>类型</th>
+                <th>单价（元/升）</th>
+                <th>库存</th>
+                <th>容量</th>
+              </tr>
+            </thead>
+            <tbody id="fuel-table"></tbody>
+          </table>
+          <div id="fuel-alerts" class="alert-list"></div>
+        </div>
+
+        <!-- 油枪状态 -->
+        <div class="card">
+          <h2><span class="icon">⛽</span> 油枪状态</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>编号</th>
+                <th>燃油类型</th>
+                <th>状态</th>
+              </tr>
+            </thead>
+            <tbody id="pump-table"></tbody>
+          </table>
+        </div>
+
+        <!-- 加油交易 -->
+        <div class="card">
+          <h2><span class="icon">💳</span> 加油交易</h2>
+          <div class="form-row">
+            <select id="sell-pump">
+              <option value="">选择油枪</option>
+            </select>
+            <input
+              type="number"
+              id="sell-liters"
+              placeholder="升数"
+              min="1"
+              step="0.1"
+            />
+            <button class="btn btn-primary" onclick="doSell()">加油</button>
+          </div>
+          <div class="txn-list" style="margin-top: 16px">
+            <table>
+              <thead>
+                <tr>
+                  <th>编号</th>
+                  <th>燃油</th>
+                  <th>升数</th>
+                  <th>金额</th>
+                </tr>
+              </thead>
+              <tbody id="txn-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 员工管理 -->
+        <div class="card">
+          <h2><span class="icon">👥</span> 员工管理</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>编号</th>
+                <th>姓名</th>
+                <th>职位</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="emp-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API = "";
+
+      async function api(path, opts) {
+        const res = await fetch(API + path, opts);
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "请求失败");
+        return json.data;
+      }
+
+      function getProgressColor(pct) {
+        if (pct > 50) return "#4caf50";
+        if (pct > 20) return "#ff9800";
+        return "#f44336";
+      }
+
+      function getStatusBadge(status) {
+        const map = {
+          空闲: "badge-green",
+          使用中: "badge-yellow",
+          故障: "badge-red",
+        };
+        return `<span class="badge ${map[status] || "badge-blue"}">${status}</span>`;
+      }
+
+      async function loadFuels() {
+        const fuels = await api("/api/fuels");
+        const tbody = document.getElementById("fuel-table");
+        tbody.innerHTML = fuels
+          .map((f) => {
+            const pct = ((f.currentStock / f.maxCapacity) * 100).toFixed(1);
+            return `<tr>
+            <td><strong>${f.name}</strong></td>
+            <td>¥${f.pricePerLiter}</td>
+            <td>
+              <div>${f.currentStock.toLocaleString()}升 (${pct}%)</div>
+              <div class="progress-bar" style="margin-top:4px">
+                <div class="progress-fill" style="width:${pct}%;background:${getProgressColor(pct)}"></div>
+              </div>
+            </td>
+            <td>${f.maxCapacity.toLocaleString()}升</td>
+          </tr>`;
+          })
+          .join("");
+      }
+
+      async function loadPumps() {
+        const pumps = await api("/api/pumps");
+        document.getElementById("pump-table").innerHTML = pumps
+          .map(
+            (p) => `<tr>
+            <td>${p.id}号</td>
+            <td>${p.assignedFuel}</td>
+            <td>${getStatusBadge(p.status)}</td>
+          </tr>`,
+          )
+          .join("");
+
+        const sel = document.getElementById("sell-pump");
+        const available = pumps.filter((p) => p.status === "空闲");
+        sel.innerHTML =
+          '<option value="">选择油枪</option>' +
+          available
+            .map(
+              (p) =>
+                `<option value="${p.id}">${p.id}号 - ${p.assignedFuel}</option>`,
+            )
+            .join("");
+      }
+
+      async function loadTransactions() {
+        const txns = await api("/api/transactions?limit=10");
+        const tbody = document.getElementById("txn-table");
+        if (txns.length === 0) {
+          tbody.innerHTML =
+            '<tr><td colspan="4" class="empty">暂无交易记录</td></tr>';
+          return;
+        }
+        tbody.innerHTML = txns
+          .map(
+            (t) => `<tr>
+            <td>${t.id}</td>
+            <td>${t.fuelType}</td>
+            <td>${t.liters}升</td>
+            <td style="color:#d32f2f;font-weight:600">¥${t.total}</td>
+          </tr>`,
+          )
+          .join("");
+      }
+
+      async function loadReport() {
+        const r = await api("/api/report");
+        document.getElementById("stat-revenue").textContent =
+          `¥${r.totalRevenue.toLocaleString()}`;
+        document.getElementById("stat-liters").textContent =
+          r.totalLitersSold.toLocaleString();
+        document.getElementById("stat-txns").textContent = r.transactionCount;
+
+        const alerts = document.getElementById("fuel-alerts");
+        if (r.lowStockAlerts.length > 0) {
+          alerts.innerHTML = r.lowStockAlerts
+            .map((a) => `<div class="alert-item">⚠️ ${a}</div>`)
+            .join("");
+        } else {
+          alerts.innerHTML = "";
+        }
+      }
+
+      async function loadEmployees() {
+        const onShift = await api("/api/employees/on-shift");
+        document.getElementById("stat-employees").textContent = onShift.length;
+
+        const allEmps = [
+          { id: "E001", name: "张伟", role: "经理" },
+          { id: "E002", name: "李娜", role: "加油员" },
+          { id: "E003", name: "王芳", role: "收银员" },
+        ];
+        const onShiftIds = new Set(onShift.map((e) => e.id));
+        document.getElementById("emp-table").innerHTML = allEmps
+          .map((e) => {
+            const isOn = onShiftIds.has(e.id);
+            return `<tr>
+            <td>${e.id}</td>
+            <td>${e.name}</td>
+            <td>${e.role}</td>
+            <td>
+              ${
+                isOn
+                  ? `<span class="badge badge-green">在班</span>
+                   <button class="btn btn-danger" style="padding:4px 12px;font-size:12px;margin-left:6px" onclick="toggleShift('${e.id}',false)">下班</button>`
+                  : `<span class="badge badge-red">离班</span>
+                   <button class="btn btn-success" style="padding:4px 12px;font-size:12px;margin-left:6px" onclick="toggleShift('${e.id}',true)">上班</button>`
+              }
+            </td>
+          </tr>`;
+          })
+          .join("");
+      }
+
+      async function doSell() {
+        const pumpId = Number(document.getElementById("sell-pump").value);
+        const liters = Number(document.getElementById("sell-liters").value);
+        if (!pumpId || !liters || liters <= 0) {
+          alert("请选择油枪并输入有效升数");
+          return;
+        }
+        try {
+          const txn = await api("/api/sell", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ pumpId, liters }),
+          });
+          alert(
+            `交易成功！\n编号：${txn.id}\n${txn.fuelType} ${txn.liters}升\n金额：¥${txn.total}`,
+          );
+          document.getElementById("sell-liters").value = "";
+          refresh();
+        } catch (e) {
+          alert("交易失败：" + e.message);
+        }
+      }
+
+      async function toggleShift(id, clockIn) {
+        try {
+          const path = clockIn
+            ? `/api/employees/${id}/clock-in`
+            : `/api/employees/${id}/clock-out`;
+          await api(path, { method: "POST" });
+          refresh();
+        } catch (e) {
+          alert(e.message);
+        }
+      }
+
+      function updateClock() {
+        const now = new Date();
+        document.getElementById("clock").textContent = now.toLocaleString(
+          "zh-CN",
+          {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          },
+        );
+      }
+
+      function refresh() {
+        loadFuels();
+        loadPumps();
+        loadTransactions();
+        loadReport();
+        loadEmployees();
+      }
+
+      updateClock();
+      setInterval(updateClock, 1000);
+      refresh();
+      setInterval(refresh, 5000);
+    </script>
+  </body>
+</html>

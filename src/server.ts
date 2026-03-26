@@ -1,8 +1,13 @@
+import path from "path";
+import { fileURLToPath } from "url";
 import express, { type Request, type Response } from "express";
 import { GasStationManager } from "./gas-station-manager.js";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "..", "public")));
 
 const station = new GasStationManager("快捷加油站");
 
