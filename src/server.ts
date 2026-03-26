@@ -146,8 +146,8 @@ app.get("/api/report", (_req: Request, res: Response) => {
   res.json({ data: station.generateReport() });
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
+const PORT = Number(process.env.PORT) || 3000;
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`加油站管理系统已启动：http://localhost:${PORT}`);
   console.log("\n可用接口：");
   console.log("  GET    /api/fuels              - 查看所有燃油");
