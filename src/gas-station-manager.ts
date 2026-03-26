@@ -10,26 +10,26 @@ export class GasStationManager {
 
   constructor(public readonly stationName: string) {}
 
-  // --- Fuel Management ---
+  // --- 燃油管理 ---
 
   addFuelType(
     name: string,
-    pricePerGallon: number,
+    pricePerLiter: number,
     maxCapacity: number,
     initialStock = 0,
   ): FuelType {
     if (this.fuels.has(name)) {
-      throw new Error(`Fuel type "${name}" already exists`);
+      throw new Error(`燃油类型"${name}"已存在`);
     }
-    if (pricePerGallon <= 0) {
-      throw new Error("Price per gallon must be positive");
+    if (pricePerLiter <= 0) {
+      throw new Error("每升价格必须为正数");
     }
     if (initialStock > maxCapacity) {
-      throw new Error("Initial stock cannot exceed max capacity");
+      throw new Error("初始库存不能超过最大容量");
     }
     const fuel: FuelType = {
       name,
-      pricePerGallon,
+      pricePerLiter,
       currentStock: initialStock,
       maxCapacity,
     };
@@ -40,23 +40,21 @@ export class GasStationManager {
   updateFuelPrice(name: string, newPrice: number): FuelType {
     const fuel = this.getFuel(name);
     if (newPrice <= 0) {
-      throw new Error("Price per gallon must be positive");
+      throw new Error("每升价格必须为正数");
     }
-    fuel.pricePerGallon = newPrice;
+    fuel.pricePerLiter = newPrice;
     return fuel;
   }
 
-  refillFuel(name: string, gallons: number): FuelType {
+  refillFuel(name: string, liters: number): FuelType {
     const fuel = this.getFuel(name);
-    if (gallons <= 0) {
-      throw new Error("Gallons must be positive");
+    if (liters <= 0) {
+      throw new Error("升数必须为正数");
     }
-    if (fuel.currentStock + gallons > fuel.maxCapacity) {
-      throw new Error(
-        `Refill would exceed capacity. Available space: ${fuel.maxCapacity - fuel.currentStock} gallons`,
-      );
+    if (fuel.currentStock + liters > fuel.maxCapacity) {
+      throw new Error(`补充量超出容量。可用空间：${fuel.maxCapacity - fuel.currentStock}升`);
     }
-    fuel.currentStock += gallons;
+    fuel.currentStock += liters;
     return fuel;
   }
 
@@ -64,14 +62,14 @@ export class GasStationManager {
     return Array.from(this.fuels.values());
   }
 
-  // --- Pump Management ---
+  // --- 油枪管理 ---
 
   addPump(id: number, assignedFuel: string): Pump {
     if (this.pumps.has(id)) {
-      throw new Error(`Pump #${id} already exists`);
+      throw new Error(`${id}号油枪已存在`);
     }
-    this.getFuel(assignedFuel); // validate fuel exists
-    const pump: Pump = { id, status: "available", assignedFuel };
+    this.getFuel(assignedFuel); // 验证燃油类型是否存在
+    const pump: Pump = { id, status: "空闲", assignedFuel };
     this.pumps.set(id, pump);
     return pump;
   }
@@ -83,39 +81,39 @@ export class GasStationManager {
   }
 
   getAvailablePumps(): Pump[] {
-    return Array.from(this.pumps.values()).filter((p) => p.status === "available");
+    return Array.from(this.pumps.values()).filter((p) => p.status === "空闲");
   }
 
   getAllPumps(): Pump[] {
     return Array.from(this.pumps.values());
   }
 
-  // --- Transactions ---
+  // --- 交易管理 ---
 
-  sellFuel(pumpId: number, gallons: number): Transaction {
+  sellFuel(pumpId: number, liters: number): Transaction {
     const pump = this.getPump(pumpId);
-    if (pump.status !== "available") {
-      throw new Error(`Pump #${pumpId} is ${pump.status}`);
+    if (pump.status !== "空闲") {
+      throw new Error(`${pumpId}号油枪当前状态：${pump.status}`);
     }
-    if (gallons <= 0) {
-      throw new Error("Gallons must be positive");
+    if (liters <= 0) {
+      throw new Error("升数必须为正数");
     }
 
     const fuel = this.getFuel(pump.assignedFuel);
-    if (fuel.currentStock < gallons) {
-      throw new Error(`Insufficient fuel. Available: ${fuel.currentStock} gallons`);
+    if (fuel.currentStock < liters) {
+      throw new Error(`燃油不足。当前库存：${fuel.currentStock}升`);
     }
 
-    fuel.currentStock -= gallons;
+    fuel.currentStock -= liters;
     this.transactionCounter++;
 
     const transaction: Transaction = {
       id: `TXN-${String(this.transactionCounter).padStart(6, "0")}`,
       pumpId,
       fuelType: pump.assignedFuel,
-      gallons,
-      pricePerGallon: fuel.pricePerGallon,
-      total: parseFloat((gallons * fuel.pricePerGallon).toFixed(2)),
+      liters,
+      pricePerLiter: fuel.pricePerLiter,
+      total: parseFloat((liters * fuel.pricePerLiter).toFixed(2)),
       timestamp: new Date(),
     };
 
@@ -128,11 +126,11 @@ export class GasStationManager {
     return limit ? sorted.slice(0, limit) : sorted;
   }
 
-  // --- Employee Management ---
+  // --- 员工管理 ---
 
   addEmployee(id: string, name: string, role: Employee["role"]): Employee {
     if (this.employees.has(id)) {
-      throw new Error(`Employee "${id}" already exists`);
+      throw new Error(`员工"${id}"已存在`);
     }
     const employee: Employee = { id, name, role, onShift: false };
     this.employees.set(id, employee);
@@ -142,7 +140,7 @@ export class GasStationManager {
   clockIn(employeeId: string): ShiftLog {
     const employee = this.getEmployee(employeeId);
     if (employee.onShift) {
-      throw new Error(`${employee.name} is already on shift`);
+      throw new Error(`${employee.name}已在班中`);
     }
     employee.onShift = true;
     const log: ShiftLog = { employeeId, clockIn: new Date() };
@@ -153,7 +151,7 @@ export class GasStationManager {
   clockOut(employeeId: string): ShiftLog {
     const employee = this.getEmployee(employeeId);
     if (!employee.onShift) {
-      throw new Error(`${employee.name} is not on shift`);
+      throw new Error(`${employee.name}当前不在班`);
     }
     employee.onShift = false;
     const openLog = this.shiftLogs
@@ -163,18 +161,18 @@ export class GasStationManager {
       openLog.clockOut = new Date();
       return openLog;
     }
-    throw new Error("No open shift found");
+    throw new Error("未找到未结束的班次");
   }
 
   getOnShiftEmployees(): Employee[] {
     return Array.from(this.employees.values()).filter((e) => e.onShift);
   }
 
-  // --- Reporting ---
+  // --- 报表 ---
 
   generateReport(): StationReport {
     const totalRevenue = this.transactions.reduce((sum, t) => sum + t.total, 0);
-    const totalGallonsSold = this.transactions.reduce((sum, t) => sum + t.gallons, 0);
+    const totalLitersSold = this.transactions.reduce((sum, t) => sum + t.liters, 0);
 
     const LOW_STOCK_THRESHOLD = 0.2; // 20%
     const fuelLevels = Array.from(this.fuels.values()).map((f) => ({
@@ -185,23 +183,23 @@ export class GasStationManager {
 
     const lowStockAlerts = fuelLevels
       .filter((f) => f.percentage < LOW_STOCK_THRESHOLD * 100)
-      .map((f) => `${f.name} is at ${f.percentage}% capacity`);
+      .map((f) => `${f.name}库存仅剩${f.percentage}%`);
 
     return {
       totalRevenue: parseFloat(totalRevenue.toFixed(2)),
-      totalGallonsSold: parseFloat(totalGallonsSold.toFixed(2)),
+      totalLitersSold: parseFloat(totalLitersSold.toFixed(2)),
       transactionCount: this.transactions.length,
       fuelLevels,
       lowStockAlerts,
     };
   }
 
-  // --- Helpers ---
+  // --- 内部方法 ---
 
   private getFuel(name: string): FuelType {
     const fuel = this.fuels.get(name);
     if (!fuel) {
-      throw new Error(`Fuel type "${name}" not found`);
+      throw new Error(`燃油类型"${name}"不存在`);
     }
     return fuel;
   }
@@ -209,7 +207,7 @@ export class GasStationManager {
   private getPump(id: number): Pump {
     const pump = this.pumps.get(id);
     if (!pump) {
-      throw new Error(`Pump #${id} not found`);
+      throw new Error(`${id}号油枪不存在`);
     }
     return pump;
   }
@@ -217,7 +215,7 @@ export class GasStationManager {
   private getEmployee(id: string): Employee {
     const employee = this.employees.get(id);
     if (!employee) {
-      throw new Error(`Employee "${id}" not found`);
+      throw new Error(`员工"${id}"不存在`);
     }
     return employee;
   }

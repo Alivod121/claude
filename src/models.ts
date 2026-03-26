@@ -1,13 +1,13 @@
 export interface FuelType {
   name: string;
-  pricePerGallon: number;
-  currentStock: number; // gallons
-  maxCapacity: number; // gallons
+  pricePerLiter: number;
+  currentStock: number; // 升
+  maxCapacity: number; // 升
 }
 
 export interface Pump {
   id: number;
-  status: "available" | "in-use" | "out-of-order";
+  status: "空闲" | "使用中" | "故障";
   assignedFuel: string;
 }
 
@@ -15,8 +15,8 @@ export interface Transaction {
   id: string;
   pumpId: number;
   fuelType: string;
-  gallons: number;
-  pricePerGallon: number;
+  liters: number;
+  pricePerLiter: number;
   total: number;
   timestamp: Date;
 }
@@ -24,7 +24,7 @@ export interface Transaction {
 export interface Employee {
   id: string;
   name: string;
-  role: "manager" | "attendant" | "cashier";
+  role: "经理" | "加油员" | "收银员";
   onShift: boolean;
 }
 
@@ -36,7 +36,7 @@ export interface ShiftLog {
 
 export interface StationReport {
   totalRevenue: number;
-  totalGallonsSold: number;
+  totalLitersSold: number;
   transactionCount: number;
   fuelLevels: { name: string; level: number; percentage: number }[];
   lowStockAlerts: string[];

@@ -1,142 +1,136 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { GasStationManager } from "./gas-station-manager.js";
 
-describe("GasStationManager", () => {
+describe("加油站管理系统", () => {
   let station: GasStationManager;
 
   beforeEach(() => {
-    station = new GasStationManager("Test Station");
+    station = new GasStationManager("测试加油站");
   });
 
-  describe("Fuel Management", () => {
-    it("adds a fuel type", () => {
-      const fuel = station.addFuelType("Regular", 3.49, 10000, 5000);
-      expect(fuel.name).toBe("Regular");
-      expect(fuel.pricePerGallon).toBe(3.49);
+  describe("燃油管理", () => {
+    it("添加燃油类型", () => {
+      const fuel = station.addFuelType("92号汽油", 7.89, 10000, 5000);
+      expect(fuel.name).toBe("92号汽油");
+      expect(fuel.pricePerLiter).toBe(7.89);
       expect(fuel.currentStock).toBe(5000);
       expect(fuel.maxCapacity).toBe(10000);
     });
 
-    it("rejects duplicate fuel types", () => {
-      station.addFuelType("Regular", 3.49, 10000);
-      expect(() => station.addFuelType("Regular", 3.99, 5000)).toThrow(
-        'Fuel type "Regular" already exists',
-      );
+    it("拒绝重复的燃油类型", () => {
+      station.addFuelType("92号汽油", 7.89, 10000);
+      expect(() => station.addFuelType("92号汽油", 8.0, 5000)).toThrow("已存在");
     });
 
-    it("rejects non-positive price", () => {
-      expect(() => station.addFuelType("Regular", 0, 10000)).toThrow(
-        "Price per gallon must be positive",
-      );
+    it("拒绝非正数价格", () => {
+      expect(() => station.addFuelType("92号汽油", 0, 10000)).toThrow("必须为正数");
     });
 
-    it("rejects initial stock exceeding capacity", () => {
-      expect(() => station.addFuelType("Regular", 3.49, 100, 200)).toThrow(
-        "Initial stock cannot exceed max capacity",
-      );
+    it("拒绝初始库存超过最大容量", () => {
+      expect(() => station.addFuelType("92号汽油", 7.89, 100, 200)).toThrow("不能超过最大容量");
     });
 
-    it("updates fuel price", () => {
-      station.addFuelType("Regular", 3.49, 10000);
-      const updated = station.updateFuelPrice("Regular", 3.99);
-      expect(updated.pricePerGallon).toBe(3.99);
+    it("更新燃油价格", () => {
+      station.addFuelType("92号汽油", 7.89, 10000);
+      const updated = station.updateFuelPrice("92号汽油", 8.19);
+      expect(updated.pricePerLiter).toBe(8.19);
     });
 
-    it("refills fuel", () => {
-      station.addFuelType("Regular", 3.49, 10000, 5000);
-      const refilled = station.refillFuel("Regular", 3000);
+    it("补充燃油", () => {
+      station.addFuelType("92号汽油", 7.89, 10000, 5000);
+      const refilled = station.refillFuel("92号汽油", 3000);
       expect(refilled.currentStock).toBe(8000);
     });
 
-    it("rejects refill exceeding capacity", () => {
-      station.addFuelType("Regular", 3.49, 10000, 9000);
-      expect(() => station.refillFuel("Regular", 2000)).toThrow("exceed capacity");
+    it("拒绝补充量超出容量", () => {
+      station.addFuelType("92号汽油", 7.89, 10000, 9000);
+      expect(() => station.refillFuel("92号汽油", 2000)).toThrow("超出容量");
     });
 
-    it("returns all fuel statuses", () => {
-      station.addFuelType("Regular", 3.49, 10000);
-      station.addFuelType("Premium", 4.29, 8000);
+    it("返回所有燃油状态", () => {
+      station.addFuelType("92号汽油", 7.89, 10000);
+      station.addFuelType("95号汽油", 8.49, 8000);
       expect(station.getFuelStatus()).toHaveLength(2);
     });
   });
 
-  describe("Pump Management", () => {
+  describe("油枪管理", () => {
     beforeEach(() => {
-      station.addFuelType("Regular", 3.49, 10000, 5000);
+      station.addFuelType("92号汽油", 7.89, 10000, 5000);
     });
 
-    it("adds a pump", () => {
-      const pump = station.addPump(1, "Regular");
+    it("添加油枪", () => {
+      const pump = station.addPump(1, "92号汽油");
       expect(pump.id).toBe(1);
-      expect(pump.status).toBe("available");
-      expect(pump.assignedFuel).toBe("Regular");
+      expect(pump.status).toBe("空闲");
+      expect(pump.assignedFuel).toBe("92号汽油");
     });
 
-    it("rejects duplicate pump ids", () => {
-      station.addPump(1, "Regular");
-      expect(() => station.addPump(1, "Regular")).toThrow("Pump #1 already exists");
+    it("拒绝重复的油枪编号", () => {
+      station.addPump(1, "92号汽油");
+      expect(() => station.addPump(1, "92号汽油")).toThrow("已存在");
     });
 
-    it("rejects pump with unknown fuel", () => {
-      expect(() => station.addPump(1, "Hydrogen")).toThrow('Fuel type "Hydrogen" not found');
+    it("拒绝未知燃油类型的油枪", () => {
+      expect(() => station.addPump(1, "氢气")).toThrow("不存在");
     });
 
-    it("sets pump status", () => {
-      station.addPump(1, "Regular");
-      const updated = station.setPumpStatus(1, "out-of-order");
-      expect(updated.status).toBe("out-of-order");
+    it("设置油枪状态", () => {
+      station.addPump(1, "92号汽油");
+      const updated = station.setPumpStatus(1, "故障");
+      expect(updated.status).toBe("故障");
     });
 
-    it("filters available pumps", () => {
-      station.addPump(1, "Regular");
-      station.addPump(2, "Regular");
-      station.setPumpStatus(2, "out-of-order");
+    it("筛选空闲油枪", () => {
+      station.addPump(1, "92号汽油");
+      station.addPump(2, "92号汽油");
+      station.setPumpStatus(2, "故障");
       expect(station.getAvailablePumps()).toHaveLength(1);
     });
   });
 
-  describe("Transactions", () => {
+  describe("交易管理", () => {
     beforeEach(() => {
-      station.addFuelType("Regular", 3.49, 10000, 5000);
-      station.addPump(1, "Regular");
+      station.addFuelType("92号汽油", 7.89, 10000, 5000);
+      station.addPump(1, "92号汽油");
     });
 
-    it("processes a fuel sale", () => {
+    it("处理加油交易", () => {
       const txn = station.sellFuel(1, 10);
-      expect(txn.gallons).toBe(10);
-      expect(txn.total).toBe(34.9);
-      expect(txn.fuelType).toBe("Regular");
+      expect(txn.liters).toBe(10);
+      expect(txn.total).toBe(78.9);
+      expect(txn.fuelType).toBe("92号汽油");
       expect(txn.id).toMatch(/^TXN-/);
     });
 
-    it("reduces fuel stock after sale", () => {
+    it("售后减少燃油库存", () => {
       station.sellFuel(1, 100);
       const fuels = station.getFuelStatus();
       expect(fuels[0].currentStock).toBe(4900);
     });
 
-    it("rejects sale on unavailable pump", () => {
-      station.setPumpStatus(1, "out-of-order");
-      expect(() => station.sellFuel(1, 10)).toThrow("out-of-order");
+    it("拒绝在不可用油枪上交易", () => {
+      station.setPumpStatus(1, "故障");
+      expect(() => station.sellFuel(1, 10)).toThrow("故障");
     });
 
-    it("rejects sale exceeding stock", () => {
-      expect(() => station.sellFuel(1, 6000)).toThrow("Insufficient fuel");
+    it("拒绝超出库存的交易", () => {
+      expect(() => station.sellFuel(1, 6000)).toThrow("燃油不足");
     });
 
-    it("rejects non-positive gallons", () => {
-      expect(() => station.sellFuel(1, 0)).toThrow("Gallons must be positive");
+    it("拒绝非正数升数", () => {
+      expect(() => station.sellFuel(1, 0)).toThrow("必须为正数");
     });
 
-    it("returns transactions in reverse order", () => {
+    it("按时间倒序返回交易记录", () => {
       station.sellFuel(1, 5);
       station.sellFuel(1, 10);
       const txns = station.getTransactions();
-      expect(txns[0].gallons).toBe(10);
-      expect(txns[1].gallons).toBe(5);
+      expect(txns[0].liters).toBe(10);
+      expect(txns[1].liters).toBe(5);
     });
 
-    it("limits returned transactions", () => {
+    it("限制返回的交易记录数量", () => {
       station.sellFuel(1, 5);
       station.sellFuel(1, 10);
       station.sellFuel(1, 15);
@@ -144,58 +138,56 @@ describe("GasStationManager", () => {
     });
   });
 
-  describe("Employee Management", () => {
-    it("adds an employee", () => {
-      const emp = station.addEmployee("E001", "Alice", "manager");
+  describe("员工管理", () => {
+    it("添加员工", () => {
+      const emp = station.addEmployee("E001", "张伟", "经理");
       expect(emp.id).toBe("E001");
       expect(emp.onShift).toBe(false);
     });
 
-    it("rejects duplicate employee id", () => {
-      station.addEmployee("E001", "Alice", "manager");
-      expect(() => station.addEmployee("E001", "Bob", "attendant")).toThrow(
-        'Employee "E001" already exists',
-      );
+    it("拒绝重复的员工编号", () => {
+      station.addEmployee("E001", "张伟", "经理");
+      expect(() => station.addEmployee("E001", "李娜", "加油员")).toThrow("已存在");
     });
 
-    it("clocks in and out", () => {
-      station.addEmployee("E001", "Alice", "manager");
+    it("上班打卡和下班打卡", () => {
+      station.addEmployee("E001", "张伟", "经理");
       station.clockIn("E001");
       expect(station.getOnShiftEmployees()).toHaveLength(1);
       station.clockOut("E001");
       expect(station.getOnShiftEmployees()).toHaveLength(0);
     });
 
-    it("rejects double clock-in", () => {
-      station.addEmployee("E001", "Alice", "manager");
+    it("拒绝重复上班打卡", () => {
+      station.addEmployee("E001", "张伟", "经理");
       station.clockIn("E001");
-      expect(() => station.clockIn("E001")).toThrow("already on shift");
+      expect(() => station.clockIn("E001")).toThrow("已在班中");
     });
 
-    it("rejects clock-out when not on shift", () => {
-      station.addEmployee("E001", "Alice", "manager");
-      expect(() => station.clockOut("E001")).toThrow("not on shift");
+    it("拒绝未上班时下班打卡", () => {
+      station.addEmployee("E001", "张伟", "经理");
+      expect(() => station.clockOut("E001")).toThrow("不在班");
     });
   });
 
-  describe("Reporting", () => {
-    it("generates a complete report", () => {
-      station.addFuelType("Regular", 3.49, 10000, 5000);
-      station.addFuelType("Premium", 4.29, 8000, 800);
-      station.addPump(1, "Regular");
+  describe("报表", () => {
+    it("生成完整报表", () => {
+      station.addFuelType("92号汽油", 7.89, 10000, 5000);
+      station.addFuelType("95号汽油", 8.49, 8000, 800);
+      station.addPump(1, "92号汽油");
       station.sellFuel(1, 10);
       station.sellFuel(1, 20);
 
       const report = station.generateReport();
-      expect(report.totalRevenue).toBe(104.7);
-      expect(report.totalGallonsSold).toBe(30);
+      expect(report.totalRevenue).toBe(236.7);
+      expect(report.totalLitersSold).toBe(30);
       expect(report.transactionCount).toBe(2);
       expect(report.fuelLevels).toHaveLength(2);
       expect(report.lowStockAlerts).toHaveLength(1);
-      expect(report.lowStockAlerts[0]).toContain("Premium");
+      expect(report.lowStockAlerts[0]).toContain("95号汽油");
     });
 
-    it("returns empty report for new station", () => {
+    it("新加油站返回空报表", () => {
       const report = station.generateReport();
       expect(report.totalRevenue).toBe(0);
       expect(report.transactionCount).toBe(0);
